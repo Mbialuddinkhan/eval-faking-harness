@@ -1,0 +1,9 @@
+# Core harness has no hard third-party dependency — it runs on the standard library
+# with the built-in mock provider, so the pipeline is testable without API keys.
+#
+# Install the extras you need for live model calls:
+#   pip install openai        # for --provider openai
+#   pip install anthropic     # for --provider anthropic
+#
+# numpy is optional; stats.py falls back to a pure-Python bootstrap if it is absent.
+numpy>=1.24 ; python_version >= "3.9"

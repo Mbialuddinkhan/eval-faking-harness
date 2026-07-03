@@ -1,0 +1,11 @@
+# Secrets — never commit
+.env
+
+# Run outputs (regenerable; real-run results are summarized in RESEARCH-NOTE.md)
+results/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
