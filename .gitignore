@@ -4,6 +4,9 @@
 # Run outputs (regenerable; real-run results are summarized in RESEARCH-NOTE.md)
 results/
 
+# Web app local config (generated per-machine)
+webapp/config.json
+
 # Python
 __pycache__/
 *.pyc

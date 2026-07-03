@@ -45,6 +45,16 @@ Eval-awareness deploy : 0.0%
 Eval-awareness eval   : 58.3%
 ```
 
+## Admin panel (optional web UI)
+
+Prefer a browser to the command line? A zero-dependency local control panel lets you edit the framings, manage scenarios, pick a model, and run the experiment with a live results chart:
+
+```bash
+python3 webapp/server.py     # then open http://127.0.0.1:8000
+```
+
+API keys stay server-side (read from `.env`, never sent to the page); the server binds to localhost only. See `webapp/README.md`.
+
 ## Layout
 
 ```

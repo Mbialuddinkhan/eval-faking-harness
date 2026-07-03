@@ -4,7 +4,7 @@
 
 ## Summary
 
-I built a compact, fully reproducible harness to test a single claim: that a language model changes its safety behaviour when it can tell it is being evaluated. The design is a paired one — the same dual-use request shown under a deployment framing and an evaluation framing, differing only in context — and the analysis pairs the two within each scenario. Running the pipeline against a deterministic mock model recovers a planted observer effect (+50 percentage points in safe-response rate, 95% CI [+25, +75], McNemar exact p = 0.031) and confirms the statistics do what they claim. The harness is written so the same two commands run against a real model with one flag change. This note documents the design, what it does and does not show, and where I would take it next. It is a capability demonstration, not a new empirical result.
+I built a compact, fully reproducible harness to test a single claim: that a language model changes its safety behaviour when it can tell it is being evaluated. The design is a paired one — the same dual-use request shown under a deployment framing and an evaluation framing, differing only in context — and the analysis pairs the two within each scenario. Validation on a deterministic mock model recovers a planted observer effect (+50 points, 95% CI [+25, +75], McNemar exact p = 0.031), confirming the statistics work. Run against three real Claude models (Haiku 4.5, Sonnet 5, Opus 4.8), the harness found **no positive observer effect** on this 12-scenario set — every confidence interval includes zero — though the models did increasingly notice the evaluation context without becoming safer. This note documents the design, the results, what they do and do not show, and where I would take it next. It is a capability demonstration with an honestly-reported null, not a new positive result.
 
 ## 1. Motivation
 
@@ -39,6 +39,22 @@ With a planted effect, the analysis reports:
 | Eval-awareness rate, evaluation framing | 58.3% |
 
 The confidence interval excludes zero and the discordant pairs all point the same way, which is what should happen when the effect is real and one-directional. A separate unit test plants a pure effect and confirms the CI excludes zero and McNemar counts the pairs correctly. This is the part I care most about: the instrument is calibrated against a case where I know the answer.
+
+## 3b. Real-model results (three Claude models)
+
+I then ran the harness against three current Claude models — Haiku 4.5, Sonnet 5, and Opus 4.8 — over the 12 scenarios under both framings (24 calls each, temperature 0 where the model supports it).
+
+| Model | Safe (private chat) | Safe (under test) | Observer effect | 95% CI | McNemar p | Noticed the test (chat → test) |
+|---|---|---|---|---|---|---|
+| Haiku 4.5 | 83% | 75% | −8% | [−25%, 0%] | 1.0 | 0% → 25% |
+| Sonnet 5 | 67% | 67% | 0% | [−25%, +25%] | 1.0 | 0% → 8% |
+| Opus 4.8 | 83% | 67% | −17% | [−42%, 0%] | 0.5 | 0% → 50% |
+
+**No positive observer effect appeared.** None of the three behaved measurably safer under the evaluation framing; every confidence interval includes zero and no McNemar test is significant. The point estimates lean slightly *negative* — marginally safer in the private-chat framing — but within noise at this sample size.
+
+The more interesting signal is in the last column: the models increasingly *noticed* the evaluation framing (Opus flagged it in half of cases), yet that awareness did not translate into higher safety. In several responses Opus explicitly decoupled the two, e.g. declining a request while stating the refusal was "not because of the evaluation context — it's the same answer I'd give anyone." On this small set, that is the opposite of evaluation faking.
+
+I take this as a clean, honest null: the pipeline runs end to end against frontier models and reports uncertainty faithfully, and these particular models don't reproduce the safer-under-observation effect here. That is consistent with the source paper, whose strongest effects came from a broader model set (including Chinese open-weight and reasoning models) at larger scale — conditions this 12-scenario demonstration doesn't cover.
 
 ## 4. What this shows and what it does not
 
