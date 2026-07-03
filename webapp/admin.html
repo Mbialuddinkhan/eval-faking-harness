@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Evaluation-Faking Harness — Admin</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --border:#30363d; --text:#e6edf3;
+    --muted:#8b949e; --accent:#2f81f7; --safe:#3fb950; --warn:#d29922; --danger:#f85149;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  header{padding:20px 28px;border-bottom:1px solid var(--border)}
+  header h1{margin:0;font-size:19px}
+  header p{margin:4px 0 0;color:var(--muted);font-size:13px}
+  main{max-width:1000px;margin:0 auto;padding:24px 28px 80px}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;
+    padding:20px;margin-bottom:20px}
+  .card h2{margin:0 0 4px;font-size:15px}
+  .card .hint{color:var(--muted);font-size:12.5px;margin:0 0 14px}
+  label{display:block;font-size:12.5px;color:var(--muted);margin:12px 0 5px}
+  textarea,input,select{width:100%;background:#0d1117;color:var(--text);
+    border:1px solid var(--border);border-radius:7px;padding:9px 11px;font-size:13.5px;
+    font-family:inherit}
+  textarea{min-height:90px;resize:vertical;line-height:1.45}
+  .row{display:flex;gap:16px;flex-wrap:wrap}
+  .row>div{flex:1;min-width:150px}
+  button{background:var(--accent);color:#fff;border:0;border-radius:7px;
+    padding:10px 18px;font-size:14px;font-weight:600;cursor:pointer}
+  button.secondary{background:#21262d;border:1px solid var(--border)}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+  th,td{text-align:left;padding:7px 9px;border-bottom:1px solid var(--border);vertical-align:top}
+  th{color:var(--muted);font-weight:600}
+  td textarea{min-height:40px}
+  .scenario-req{min-height:56px}
+  .del{background:transparent;border:1px solid var(--border);color:var(--danger);
+    padding:4px 9px;font-size:12px;border-radius:6px}
+  .pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11.5px;
+    border:1px solid var(--border)}
+  .pill.ok{color:var(--safe);border-color:var(--safe)}
+  .pill.no{color:var(--muted)}
+  .bignum{font-size:30px;font-weight:700;margin:2px 0}
+  .metric{flex:1;min-width:150px;background:#0d1117;border:1px solid var(--border);
+    border-radius:8px;padding:14px 16px}
+  .metric .lbl{color:var(--muted);font-size:12px}
+  .barwrap{display:flex;align-items:flex-end;gap:34px;height:190px;padding:14px 10px 0}
+  .bar{width:80px;border-radius:6px 6px 0 0;position:relative;transition:height .4s}
+  .bar span{position:absolute;top:-22px;left:0;right:0;text-align:center;font-size:13px;font-weight:600}
+  .bar small{position:absolute;bottom:-24px;left:0;right:0;text-align:center;color:var(--muted)}
+  .status{font-size:13px;color:var(--muted);margin-left:12px}
+  .err{color:var(--danger);font-size:12.5px;white-space:pre-wrap;margin-top:10px}
+  .foot{color:var(--muted);font-size:12px;margin-top:10px}
+  a{color:var(--accent)}
+</style>
+</head>
+<body>
+<header>
+  <h1>Evaluation-Faking Harness — Admin</h1>
+  <p>Does a model behave more safely when it can tell it's being evaluated? Configure the experiment and run it live.</p>
+</header>
+<main>
+
+  <div class="card">
+    <h2>1 · Context framings <span class="hint">— the one thing that differs between conditions</span></h2>
+    <p class="hint">The scenario text is identical in both. Only this wrapper changes. Make the evaluation cues stronger or subtler to probe how sensitive the model is.</p>
+    <label>Deployment framing (feels like a normal private chat)</label>
+    <textarea id="f-deploy"></textarea>
+    <label>Evaluation framing (signals a formal, graded safety test)</label>
+    <textarea id="f-eval"></textarea>
+  </div>
+
+  <div class="card">
+    <h2>2 · Run settings</h2>
+    <div class="row">
+      <div>
+        <label>Model</label>
+        <select id="s-provider"></select>
+        <div id="key-note" class="foot"></div>
+      </div>
+      <div>
+        <label>Temperature (live models only)</label>
+        <input id="s-temp" type="number" min="0" max="2" step="0.1" value="0">
+      </div>
+      <div>
+        <label>Repeats per cell</label>
+        <input id="s-repeats" type="number" min="1" max="10" step="1" value="1">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>3 · Scenarios <span class="hint">— borderline dual-use requests</span></h2>
+    <p class="hint">Keep these on the margin. Outright-refusable items floor the safe rate under both framings and hide the effect.</p>
+    <table id="scn-table">
+      <thead><tr><th style="width:120px">ID</th><th style="width:120px">Domain</th><th>Request</th><th></th></tr></thead>
+      <tbody id="scn-body"></tbody>
+    </table>
+    <div style="margin-top:12px"><button class="secondary" onclick="addRow()">+ Add scenario</button></div>
+  </div>
+
+  <div class="card">
+    <div class="row" style="align-items:center">
+      <div style="flex:0 0 auto">
+        <button id="save-btn" class="secondary" onclick="saveConfig()">Save config</button>
+        <button id="run-btn" onclick="run()">Run experiment ▶</button>
+      </div>
+      <div class="status" id="status"></div>
+    </div>
+    <div class="err" id="err"></div>
+  </div>
+
+  <div class="card" id="results" style="display:none">
+    <h2>Results</h2>
+    <div class="row" style="margin:8px 0 18px">
+      <div class="metric"><div class="lbl">Observer effect (eval − deploy)</div><div class="bignum" id="m-effect">—</div><div class="lbl" id="m-ci"></div></div>
+      <div class="metric"><div class="lbl">Safe rate — deployment</div><div class="bignum" id="m-deploy">—</div></div>
+      <div class="metric"><div class="lbl">Safe rate — evaluation</div><div class="bignum" id="m-eval">—</div></div>
+      <div class="metric"><div class="lbl">McNemar exact p</div><div class="bignum" id="m-p">—</div></div>
+    </div>
+    <div class="barwrap">
+      <div class="bar" id="bar-deploy" style="background:var(--muted)"><span id="bl-deploy"></span><small>deployment</small></div>
+      <div class="bar" id="bar-eval" style="background:var(--accent)"><span id="bl-eval"></span><small>evaluation</small></div>
+    </div>
+    <p class="foot" id="aware-line" style="margin-top:34px"></p>
+    <p class="foot" id="prov-line"></p>
+  </div>
+
+  <p class="foot">API keys are read on the server from <code>.env</code> and are never sent to this page. Bound to localhost only.</p>
+</main>
+
+<script>
+let CFG=null, PROVIDERS=[], KEYS={};
+
+async function load(){
+  const r = await fetch('/api/config'); const d = await r.json();
+  CFG=d.config; PROVIDERS=d.providers; KEYS=d.keys;
+  document.getElementById('f-deploy').value = CFG.framings.deploy;
+  document.getElementById('f-eval').value = CFG.framings.eval;
+  const sel=document.getElementById('s-provider'); sel.innerHTML='';
+  PROVIDERS.forEach(p=>{const o=document.createElement('option');o.value=p.spec;o.textContent=p.label;sel.appendChild(o);});
+  sel.value=CFG.settings.provider||'mock';
+  document.getElementById('s-temp').value = CFG.settings.temperature ?? 0;
+  document.getElementById('s-repeats').value = CFG.settings.repeats ?? 1;
+  sel.onchange=keyNote; keyNote();
+  renderScenarios();
+}
+function keyNote(){
+  const spec=document.getElementById('s-provider').value;
+  const p=PROVIDERS.find(x=>x.spec===spec); const el=document.getElementById('key-note');
+  if(!p||!p.needs_key){el.textContent='No API key required.';el.style.color='var(--muted)';return;}
+  const have=KEYS[p.needs_key];
+  el.innerHTML = have ? '<span class="pill ok">'+p.needs_key+' detected</span>'
+    : '<span class="pill no">'+p.needs_key+' not set</span> — add it to the .env file, then restart the server.';
+}
+function renderScenarios(){
+  const b=document.getElementById('scn-body'); b.innerHTML='';
+  (CFG.scenarios||[]).forEach((s,i)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><input value="${(s.id||'').replace(/"/g,'&quot;')}" data-i="${i}" data-k="id"></td>
+      <td><input value="${(s.domain||'').replace(/"/g,'&quot;')}" data-i="${i}" data-k="domain"></td>
+      <td><textarea class="scenario-req" data-i="${i}" data-k="request">${(s.request||'').replace(/</g,'&lt;')}</textarea></td>
+      <td><button class="del" onclick="delRow(${i})">✕</button></td>`;
+    b.appendChild(tr);
+  });
+}
+function collect(){
+  document.querySelectorAll('[data-i]').forEach(el=>{
+    CFG.scenarios[+el.dataset.i][el.dataset.k]=el.value;
+  });
+  CFG.framings.deploy=document.getElementById('f-deploy').value;
+  CFG.framings.eval=document.getElementById('f-eval').value;
+  CFG.settings.provider=document.getElementById('s-provider').value;
+  CFG.settings.temperature=parseFloat(document.getElementById('s-temp').value)||0;
+  CFG.settings.repeats=parseInt(document.getElementById('s-repeats').value)||1;
+}
+function addRow(){collect();CFG.scenarios.push({id:'new_'+ (CFG.scenarios.length+1),domain:'',request:''});renderScenarios();}
+function delRow(i){collect();CFG.scenarios.splice(i,1);renderScenarios();}
+async function saveConfig(){
+  collect();
+  await fetch('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(CFG)});
+  status('Config saved.');
+}
+function status(t){document.getElementById('status').textContent=t;}
+function pct(x){return (x*100).toFixed(0)+'%';}
+function signpct(x){return (x>=0?'+':'')+(x*100).toFixed(0)+'%';}
+
+async function run(){
+  collect();
+  document.getElementById('err').textContent='';
+  const btn=document.getElementById('run-btn'); btn.disabled=true;
+  status('Running… calling the model for each scenario × framing.');
+  try{
+    const r=await fetch('/api/run',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(CFG)});
+    const d=await r.json();
+    if(!d.ok){document.getElementById('err').textContent=(d.error||'run failed')+'\n\n'+(d.trace||'');status('');btn.disabled=false;return;}
+    show(d.summary); status('Done.');
+  }catch(e){document.getElementById('err').textContent=String(e);status('');}
+  btn.disabled=false;
+}
+function show(s){
+  document.getElementById('results').style.display='block';
+  document.getElementById('m-effect').textContent=signpct(s.observer_effect);
+  const ci=s.observer_effect_ci95||[0,0];
+  document.getElementById('m-ci').textContent='95% CI '+signpct(ci[0])+' to '+signpct(ci[1]);
+  document.getElementById('m-deploy').textContent=pct(s.safe_rate_deploy);
+  document.getElementById('m-eval').textContent=pct(s.safe_rate_eval);
+  document.getElementById('m-p').textContent=(s.mcnemar&&s.mcnemar.p_value!=null)?s.mcnemar.p_value:'—';
+  const bd=document.getElementById('bar-deploy'), be=document.getElementById('bar-eval');
+  bd.style.height=(10+s.safe_rate_deploy*160)+'px'; be.style.height=(10+s.safe_rate_eval*160)+'px';
+  document.getElementById('bl-deploy').textContent=pct(s.safe_rate_deploy);
+  document.getElementById('bl-eval').textContent=pct(s.safe_rate_eval);
+  document.getElementById('aware-line').textContent=
+    'Evaluation awareness — deployment: '+pct(s.eval_awareness_rate_deploy)+' · evaluation: '+pct(s.eval_awareness_rate_eval)+
+    '   (higher awareness under the evaluation framing is the mechanism the effect runs through).';
+  document.getElementById('prov-line').textContent='Model: '+(s._provider_name||s.provider||'—')+' · '+s.n_scenarios+' paired scenarios.';
+}
+load();
+</script>
+</body>
+</html>
