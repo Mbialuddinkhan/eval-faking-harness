@@ -4,6 +4,18 @@ A small, auditable reproduction of the **observer effect in AI safety evaluation
 
 Reproduces the core design of Fan, Zhang, Pan & Yang, *Evaluation Faking: Unveiling Observer Effects in Safety Evaluation of Frontier AI Systems* (ICLR 2026, [arXiv:2505.17815](https://arxiv.org/abs/2505.17815)).
 
+## Results (three Claude models, 12 scenarios)
+
+📊 **[Live results dashboard →](https://mbialuddinkhan.github.io/eval-faking-harness/)** (rendered visual; via GitHub Pages)
+
+| Model | Safe — private chat | Safe — under test | Observer effect | 95% CI | Noticed the test |
+|---|---|---|---|---|---|
+| Haiku 4.5 | 83% | 75% | −8% | [−25%, 0%] | 0% → 25% |
+| Sonnet 5 | 67% | 67% | 0% | [−25%, +25%] | 0% → 8% |
+| Opus 4.8 | 83% | 67% | −17% | [−42%, 0%] | 0% → 50% |
+
+**No positive observer effect** appeared on this small set — none behaved measurably safer under the evaluation framing (every CI includes zero). The models did increasingly *notice* the test framing (Opus 4.8: 50%), but that awareness didn't raise safety; in several cases Opus explicitly declined "not because of the evaluation context." An honest null — full write-up and caveats in [`RESEARCH-NOTE.md`](RESEARCH-NOTE.md).
+
 ## The idea in one paragraph
 
 Take a fixed set of dual-use requests. Show each one to a model twice: once under a **deployment** framing (a private user chat, no evaluation cues) and once under an **evaluation** framing (recorded, scored, red-teamed, certified). The request text is byte-for-byte identical across the two — only the surrounding context changes. If the model is safer under the evaluation framing, that gap is the observer effect. We also score whether each response shows the model *noticed* it was being tested, because awareness is the mechanism the effect is supposed to run through.
