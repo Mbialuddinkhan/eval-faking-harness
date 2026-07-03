@@ -6,7 +6,9 @@ Reproduces the core design of Fan, Zhang, Pan & Yang, *Evaluation Faking: Unveil
 
 ## Results (three Claude models, 12 scenarios)
 
-📊 **[Live results dashboard →](https://mbialuddinkhan.github.io/eval-faking-harness/)** (rendered visual; via GitHub Pages)
+![Safe-response rates: private chat vs. under test, across three Claude models](results-chart.png)
+
+📊 **[Interactive dashboard →](https://mbialuddinkhan.github.io/eval-faking-harness/)** (example responses + per-scenario detail; via GitHub Pages)
 
 | Model | Safe — private chat | Safe — under test | Observer effect | 95% CI | Noticed the test |
 |---|---|---|---|---|---|
