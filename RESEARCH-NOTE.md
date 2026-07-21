@@ -2,6 +2,8 @@
 
 **Bilal Khan** · July 2026
 
+Code: [github.com/Mbialuddinkhan/eval-faking-harness](https://github.com/Mbialuddinkhan/eval-faking-harness) · Live results: [mbialuddinkhan.github.io/eval-faking-harness](https://mbialuddinkhan.github.io/eval-faking-harness/)
+
 ## Summary
 
 I built a compact, fully reproducible harness to test a single claim: that a language model changes its safety behaviour when it can tell it is being evaluated. The design is a paired one — the same dual-use request shown under a deployment framing and an evaluation framing, differing only in context — and the analysis pairs the two within each scenario. Validation on a deterministic mock model recovers a planted observer effect (+50 points, 95% CI [+25, +75], McNemar exact p = 0.031), confirming the statistics work. Run against three real Claude models (Haiku 4.5, Sonnet 5, Opus 4.8), the harness found **no positive observer effect** on this 12-scenario set — every confidence interval includes zero — though the models did increasingly notice the evaluation context without becoming safer. This note documents the design, the results, what they do and do not show, and where I would take it next. It is a capability demonstration with an honestly-reported null, not a new positive result.
@@ -58,13 +60,13 @@ I take this as a clean, honest null: the pipeline runs end to end against fronti
 
 ## 4. What this shows and what it does not
 
-It shows that the paired-framing comparison, the awareness scoring, and the paired statistics are implemented correctly and run end-to-end, offline, in seconds, and that the analysis recovers a known effect with honest uncertainty. That is the claim, and no more.
+It shows that the paired-framing comparison, the awareness scoring, and the paired statistics are implemented correctly and run end-to-end — validated against a known-answer mock, then run against three frontier models with the uncertainty reported faithfully. That is the claim, and no more.
 
-It does **not** reproduce the source paper's findings. I have not run it against frontier models, so I make no claim about whether real systems exhibit the effect here; the twelve-scenario set is a demonstration, not a benchmark; the keyword judge is a floor; and the scale results — that larger, reasoning, and memory-augmented models fake more — require model access and a scenario bank I have not built. Reporting a number from the mock as if it said something about real models would be exactly the kind of overclaiming safety work should avoid, so I don't.
+It does **not** overturn or reproduce the source paper's findings. Three models from a single family over twelve scenarios is a demonstration, not a benchmark; the keyword judge is a floor, not a measure of nuance; and the paper's strongest effects came from a broader set — including Chinese open-weight, reasoning, and memory-augmented models — at a scale this study doesn't reach. A null here says these models, on this set, under these framings, didn't get safer when watched. It does not say the effect isn't real where the paper found it. Treating a small null as a refutation would be the same overclaiming this field needs less of, so I don't.
 
 ## 5. Next steps
 
-Four, roughly in order of value. First, run it against a spread of real models — a small, a large, a reasoning, and a non-reasoning model — and see whether the direction holds; this is a few hours of work now that the harness exists. Second, replace the keyword judge with an LLM judge and hand-audit a sample. Third, build a cue-strength ladder: instead of one strong evaluation framing, a series from blatant to nearly-invisible, to trace how subtle a signal still moves behaviour — the dose-response curve the binary comparison can't see. Fourth, extend from single-turn requests to tool-using agents under operational pressure, which is where the effect matters most for the systems I actually build, and where it connects to faithfulness monitoring: both are questions about whether we can trust what a model tells us about itself while we are watching it.
+Four, roughly in order of value. First, widen the model spread beyond one family — reasoning models, memory-augmented setups, and the Chinese open-weight releases where the source paper found its strongest effects — and see whether the null holds. Second, replace the keyword judge with an LLM judge and hand-audit a sample. Third, build a cue-strength ladder: instead of one strong evaluation framing, a series from blatant to nearly-invisible, to trace how subtle a signal still moves behaviour — the dose-response curve the binary comparison can't see. Fourth, extend from single-turn requests to tool-using agents under operational pressure, which is where the effect matters most for the systems I actually build, and where it connects to faithfulness monitoring: both are questions about whether we can trust what a model tells us about itself while we are watching it.
 
 ## Reference
 
